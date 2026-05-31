@@ -1,1 +1,151 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Мои заявки — Техник Рядом</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  :root {
+    --bg: #0f1820;
+    --card: #18242e;
+    --card-edge: #223340;
+    --ink: #eaf2f7;
+    --ink-dim: #8aa0ad;
+    --accent: #2bb6a8;
+    --accent-warm: #f5a623;
+    --green: #34c759;
+    --red: #ff6b5e;
+    --radius: 18px;
+  }
+  body.tg-theme {
+    --bg: var(--tg-theme-bg-color, #0f1820);
+    --ink: var(--tg-theme-text-color, #eaf2f7);
+    --ink-dim: var(--tg-theme-hint-color, #8aa0ad);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+    padding: 20px 16px 40px;
+    -webkit-font-smoothing: antialiased;
+  }
+  .head {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 22px;
+    animation: drop .5s ease both;
+  }
+  .head .logo {
+    width: 46px; height: 46px; border-radius: 14px;
+    background: linear-gradient(135deg, var(--accent), #1c8a80);
+    display: grid; place-items: center;
+    font-size: 24px;
+    box-shadow: 0 6px 18px rgba(43,182,168,.35);
+  }
+  .head h1 { font-size: 20px; font-weight: 700; letter-spacing: -.3px; }
+  .head p { font-size: 13px; color: var(--ink-dim); margin-top: 2px; }
+  .count { font-size: 13px; color: var(--ink-dim); margin: 0 4px 14px; }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--card-edge);
+    border-radius: var(--radius);
+    padding: 16px 16px 14px;
+    margin-bottom: 14px;
+    position: relative;
+    overflow: hidden;
+    animation: drop .5s ease both;
+  }
+  .card::before {
+    content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+  }
+  .card.new::before { background: var(--green); }
+  .card.taken::before { background: var(--accent-warm); }
+  .card .top {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 10px;
+  }
+  .card .num { font-size: 14px; font-weight: 700; color: var(--ink); }
+  .badge {
+    font-size: 11px; font-weight: 600;
+    padding: 4px 10px; border-radius: 999px;
+    display: inline-flex; align-items: center; gap: 5px;
+  }
+  .badge.new { background: rgba(52,199,89,.15); color: var(--green); }
+  .badge.taken { background: rgba(245,166,35,.15); color: var(--accent-warm); }
+  .badge .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .problem { font-size: 16px; font-weight: 600; margin-bottom: 10px; line-height: 1.3; }
+  .meta { display: flex; flex-direction: column; gap: 6px; }
+  .meta .row { display: flex; gap: 8px; font-size: 13px; color: var(--ink-dim); align-items: center; }
+  .meta .row .i { width: 16px; text-align: center; }
+  .foot {
+    margin-top: 12px; padding-top: 12px;
+    border-top: 1px solid var(--card-edge);
+    font-size: 12px; color: var(--ink-dim);
+  }
+  .empty {
+    text-align: center; padding: 60px 20px; color: var(--ink-dim);
+    animation: drop .5s ease both;
+  }
+  .empty .ico { font-size: 48px; margin-bottom: 14px; }
+  @keyframes drop {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .card:nth-child(2) { animation-delay: .05s; }
+  .card:nth-child(3) { animation-delay: .1s; }
+  .card:nth-child(4) { animation-delay: .15s; }
+</style>
+</head>
+<body>
+  <div class="head">
+    <div class="logo">👷</div>
+    <div>
+      <h1>Мои заявки</h1>
+      <p>Техник Рядом</p>
+    </div>
+  </div>
+  <div class="count" id="count"></div>
+  <div id="list"></div>
+<script>
+  const tg = window.Telegram ? window.Telegram.WebApp : null;
+  if (tg) { tg.ready(); tg.expand(); document.body.classList.add("tg-theme"); }
 
+  // Тестовые данные (потом заменим на реальные из базы)
+  const requests = [
+    { id: 12, problem: "Течёт труба под раковиной", district: "Заягорбский", address: "ул. Ленина, 12, кв. 5", urgency: "Срочно — авария", status: "taken", date: "31.05.2026" },
+    { id: 11, problem: "Засорился унитаз", district: "Зашекснинский", address: "Октябрьский пр., 44", urgency: "Сегодня", status: "new", date: "31.05.2026" },
+    { id: 9, problem: "Установить смеситель на кухне", district: "Северный", address: "ул. Архангельская, 7, кв. 18", urgency: "В ближайшие дни", status: "new", date: "30.05.2026" }
+  ];
+
+  const statusText = { new: "Ищем мастера", taken: "Мастер найден" };
+
+  function render(items) {
+    const list = document.getElementById("list");
+    const count = document.getElementById("count");
+    if (!items.length) {
+      count.textContent = "";
+      list.innerHTML = '<div class="empty"><div class="ico">📭</div>У вас пока нет активных заявок.<br>Оставьте заявку в боте 🚿</div>';
+      return;
+    }
+    count.textContent = "Активных заявок: " + items.length;
+    list.innerHTML = items.map(r => `
+      <div class="card ${r.status}">
+        <div class="top">
+          <span class="num">Заявка №${r.id}</span>
+          <span class="badge ${r.status}"><span class="dot"></span>${statusText[r.status]}</span>
+        </div>
+        <div class="problem">${r.problem}</div>
+        <div class="meta">
+          <div class="row"><span class="i">📍</span>${r.district}, ${r.address}</div>
+          <div class="row"><span class="i">⏱</span>${r.urgency}</div>
+        </div>
+        <div class="foot">Создана ${r.date}</div>
+      </div>
+    `).join("");
+  }
+  render(requests);
+</script>
+</body>
+</html>
