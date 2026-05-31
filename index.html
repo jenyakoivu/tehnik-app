@@ -20,106 +20,185 @@
   body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     background: var(--bg); color: var(--ink); min-height: 100vh;
-    padding: 20px 16px 40px; -webkit-font-smoothing: antialiased;
+    padding: 18px 16px 40px; -webkit-font-smoothing: antialiased;
   }
-  .head { display: flex; align-items: center; gap: 12px; margin-bottom: 22px; animation: drop .5s ease both; }
+  .head { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
   .head .logo {
-    width: 46px; height: 46px; border-radius: 14px;
+    width: 44px; height: 44px; border-radius: 13px;
     background: linear-gradient(135deg, var(--accent), #1c8a80);
-    display: grid; place-items: center; font-size: 24px;
-    box-shadow: 0 6px 18px rgba(43,182,168,.35);
+    display: grid; place-items: center; font-size: 22px;
+    box-shadow: 0 6px 18px rgba(43,182,168,.35); flex-shrink: 0;
   }
-  .head h1 { font-size: 20px; font-weight: 700; letter-spacing: -.3px; }
-  .head p { font-size: 13px; color: var(--ink-dim); margin-top: 2px; }
-  .count { font-size: 13px; color: var(--ink-dim); margin: 0 4px 14px; }
+  .head h1 { font-size: 19px; font-weight: 700; letter-spacing: -.3px; }
+  .head p { font-size: 12px; color: var(--ink-dim); margin-top: 2px; }
+  .back {
+    background: none; border: none; color: var(--accent); font-size: 15px;
+    cursor: pointer; padding: 0; margin-bottom: 14px; display: inline-flex; align-items: center; gap: 6px;
+  }
+  .count { font-size: 13px; color: var(--ink-dim); margin: 0 4px 12px; }
   .card {
     background: var(--card); border: 1px solid var(--card-edge);
-    border-radius: var(--radius); padding: 16px 16px 14px; margin-bottom: 14px;
-    position: relative; overflow: hidden; animation: drop .5s ease both;
+    border-radius: var(--radius); padding: 15px 15px 13px; margin-bottom: 12px;
+    position: relative; overflow: hidden; cursor: pointer;
+    animation: drop .4s ease both; transition: transform .12s;
   }
+  .card:active { transform: scale(.985); }
   .card::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; }
   .card.new::before { background: var(--green); }
   .card.taken::before { background: var(--accent-warm); }
-  .card .top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-  .card .num { font-size: 14px; font-weight: 700; color: var(--ink); }
+  .card .top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 9px; }
+  .card .num { font-size: 14px; font-weight: 700; }
   .badge { font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 999px; display: inline-flex; align-items: center; gap: 5px; }
   .badge.new { background: rgba(52,199,89,.15); color: var(--green); }
   .badge.taken { background: rgba(245,166,35,.15); color: var(--accent-warm); }
   .badge .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
-  .problem { font-size: 16px; font-weight: 600; margin-bottom: 10px; line-height: 1.3; }
-  .meta { display: flex; flex-direction: column; gap: 6px; }
-  .meta .row { display: flex; gap: 8px; font-size: 13px; color: var(--ink-dim); align-items: center; }
-  .meta .row .i { width: 16px; text-align: center; }
-  .foot { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--card-edge); font-size: 12px; color: var(--ink-dim); }
-  .state { text-align: center; padding: 60px 20px; color: var(--ink-dim); animation: drop .5s ease both; }
+  .problem { font-size: 16px; font-weight: 600; margin-bottom: 9px; line-height: 1.3; }
+  .meta { display: flex; flex-direction: column; gap: 5px; }
+  .meta .row { display: flex; gap: 8px; font-size: 13px; color: var(--ink-dim); align-items: flex-start; }
+  .meta .row .i { width: 16px; text-align: center; flex-shrink: 0; }
+  .chev { position: absolute; right: 14px; bottom: 13px; color: var(--ink-dim); font-size: 18px; }
+  .field { margin-bottom: 16px; }
+  .field label { display: block; font-size: 12px; color: var(--ink-dim); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .4px; }
+  .field .val { font-size: 16px; font-weight: 500; }
+  .field input, .field select, .field textarea {
+    width: 100%; background: var(--card); border: 1px solid var(--card-edge);
+    border-radius: 12px; padding: 12px 14px; color: var(--ink); font-size: 16px;
+    font-family: inherit; outline: none;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--accent); }
+  .field input:disabled, .field select:disabled, .field textarea:disabled { opacity: .5; }
+  .field textarea { resize: vertical; min-height: 70px; }
+  .locked { font-size: 11px; color: var(--ink-dim); margin-top: 5px; }
+  .btn {
+    width: 100%; border: none; border-radius: 13px; padding: 14px;
+    font-size: 16px; font-weight: 600; cursor: pointer; font-family: inherit; margin-top: 8px;
+  }
+  .btn.primary { background: var(--accent); color: #04201d; }
+  .btn.ghost { background: transparent; color: var(--accent); border: 1px solid var(--card-edge); }
+  .btn.danger { background: transparent; color: var(--red); border: 1px solid rgba(255,107,94,.4); }
+  .btn:active { opacity: .8; }
+  .state { text-align: center; padding: 60px 20px; color: var(--ink-dim); }
   .state .ico { font-size: 48px; margin-bottom: 14px; }
+  .hint { font-size: 13px; color: var(--ink-dim); margin: -4px 4px 16px; line-height: 1.4; }
   @keyframes drop { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-  .card:nth-child(2) { animation-delay: .05s; }
-  .card:nth-child(3) { animation-delay: .1s; }
-  .card:nth-child(4) { animation-delay: .15s; }
 </style>
 </head>
 <body>
-  <div class="head">
-    <div class="logo">👷</div>
-    <div><h1>Мои заявки</h1><p>Техник Рядом</p></div>
-  </div>
-  <div class="count" id="count"></div>
-  <div id="list"><div class="state"><div class="ico">⏳</div>Загружаем заявки…</div></div>
-
+  <div id="app"></div>
 <script>
   const tg = window.Telegram ? window.Telegram.WebApp : null;
   if (tg) { tg.ready(); tg.expand(); document.body.classList.add("tg-theme"); }
-
-  // Адрес API на сервере (через https-домен)
-  const API = "https://138.124.54.85.nip.io/api/my_requests";
+  const API = "https://138.124.54.85.nip.io/api";
+  const initData = tg ? tg.initData : "";
   const statusText = { new: "Ищем мастера", taken: "Мастер найден" };
+  const DISTRICTS = ["Индустриальный","Северный","Заягорбский","Зашекснинский","Пригород"];
+  const URGENCIES = ["Срочно — авария","Сегодня","В ближайшие дни"];
+  let cache = [];
+  const app = document.getElementById("app");
 
-  function showState(ico, text) {
-    document.getElementById("count").textContent = "";
-    document.getElementById("list").innerHTML =
-      `<div class="state"><div class="ico">${ico}</div>${text}</div>`;
+  function esc(s){ return (s||"").replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+  function header(sub){ return '<div class="head"><div class="logo">👷</div><div><h1>Техник Рядом</h1><p>'+sub+'</p></div></div>'; }
+  function state(ico, txt){ app.innerHTML = header("Мои заявки") + '<div class="state"><div class="ico">'+ico+'</div>'+txt+'</div>'; }
+
+  async function api(path, opts){
+    const r = await fetch(API + path, opts);
+    if(!r.ok) throw new Error(r.status);
+    return r.json();
   }
 
-  function render(items) {
-    const list = document.getElementById("list");
-    const count = document.getElementById("count");
-    if (!items.length) {
-      showState("📭", "У вас пока нет активных заявок.<br>Оставьте заявку в боте 🚿");
-      return;
-    }
-    count.textContent = "Активных заявок: " + items.length;
-    list.innerHTML = items.map(r => `
-      <div class="card ${r.status}">
-        <div class="top">
-          <span class="num">Заявка №${r.id}</span>
-          <span class="badge ${r.status}"><span class="dot"></span>${statusText[r.status] || r.status}</span>
-        </div>
-        <div class="problem">${r.problem}</div>
-        <div class="meta">
-          <div class="row"><span class="i">📍</span>${r.district}, ${r.address}</div>
-          <div class="row"><span class="i">⏱</span>${r.urgency}</div>
-        </div>
-        <div class="foot">Создана ${r.date}</div>
-      </div>`).join("");
-  }
-
-  async function load() {
-    const initData = tg ? tg.initData : "";
-    if (!initData) {
-      showState("🔒", "Откройте эту страницу через кнопку в боте.");
-      return;
-    }
+  async function loadList(){
+    if(!initData){ state("🔒","Откройте страницу через кнопку в боте."); return; }
+    state("⏳","Загружаем заявки…");
     try {
-      const resp = await fetch(API + "?initData=" + encodeURIComponent(initData));
-      if (!resp.ok) { showState("⚠️", "Не удалось загрузить заявки. Попробуйте позже."); return; }
-      const data = await resp.json();
-      render(data.requests || []);
-    } catch (e) {
-      showState("⚠️", "Нет связи с сервером. Попробуйте позже.");
-    }
+      const d = await api("/my_requests?initData=" + encodeURIComponent(initData));
+      cache = d.requests || [];
+      renderList();
+    } catch(e){ state("⚠️","Нет связи с сервером. Попробуйте позже."); }
   }
-  load();
+
+  function renderList(){
+    if(!cache.length){ state("📭","У вас пока нет активных заявок.<br>Оставьте заявку в боте 🚿"); return; }
+    app.innerHTML = header("Мои заявки") +
+      '<div class="count">Активных заявок: '+cache.length+'</div>' +
+      cache.map(r => '\
+        <div class="card '+r.status+'" onclick="openDetails('+r.id+')">\
+          <div class="top">\
+            <span class="num">Заявка №'+r.id+'</span>\
+            <span class="badge '+r.status+'"><span class="dot"></span>'+(statusText[r.status]||r.status)+'</span>\
+          </div>\
+          <div class="problem">'+esc(r.problem)+'</div>\
+          <div class="meta">\
+            <div class="row"><span class="i">📍</span><span>'+esc(r.district)+', '+esc(r.address)+'</span></div>\
+            <div class="row"><span class="i">⏱</span><span>'+esc(r.urgency)+'</span></div>\
+          </div>\
+          <span class="chev">›</span>\
+        </div>').join("");
+  }
+
+  window.openDetails = function(id){
+    const r = cache.find(x => x.id === id);
+    if(!r) return;
+    app.innerHTML = header("Заявка №" + r.id) +
+      '<button class="back" onclick="renderList()">‹ Назад</button>'+
+      '<div class="field"><label>Статус</label><div class="val">'+(r.status==="taken"?"🔧 Мастер найден":"🟢 Ищем мастера")+'</div></div>'+
+      '<div class="field"><label>Проблема</label><div class="val">'+esc(r.problem)+'</div></div>'+
+      '<div class="field"><label>Район</label><div class="val">'+esc(r.district)+'</div></div>'+
+      '<div class="field"><label>Адрес</label><div class="val">'+esc(r.address)+'</div></div>'+
+      '<div class="field"><label>Срочность</label><div class="val">'+esc(r.urgency)+'</div></div>'+
+      '<div class="field"><label>Телефон</label><div class="val">'+esc(r.phone)+'</div></div>'+
+      '<button class="btn ghost" onclick="openEdit('+r.id+')">✏️ Редактировать</button>'+
+      '<button class="btn danger" onclick="doDelete('+r.id+')">🗑 Удалить заявку</button>';
+  };
+
+  window.openEdit = function(id){
+    const r = cache.find(x => x.id === id);
+    if(!r) return;
+    const taken = r.status === "taken";
+    const dis = taken ? "disabled" : "";
+    const lock = taken ? '<div class="locked">🔒 Можно менять только пока мастер не взял</div>' : "";
+    app.innerHTML = header("Редактирование") +
+      '<button class="back" onclick="openDetails('+r.id+')">‹ Назад</button>'+
+      (taken ? '<div class="hint">Мастер уже взял заявку. Сейчас можно изменить только адрес и телефон.</div>' : "")+
+      '<div class="field"><label>Проблема</label><textarea id="f_problem" '+dis+'>'+esc(r.problem)+'</textarea>'+lock+'</div>'+
+      '<div class="field"><label>Район</label><select id="f_district" '+dis+'>'+
+        DISTRICTS.map(d=>'<option '+(d===r.district?"selected":"")+'>'+d+'</option>').join("")+'</select>'+lock+'</div>'+
+      '<div class="field"><label>Адрес</label><input id="f_address" value="'+esc(r.address)+'"></div>'+
+      '<div class="field"><label>Срочность</label><select id="f_urgency" '+dis+'>'+
+        URGENCIES.map(u=>'<option '+(u===r.urgency?"selected":"")+'>'+u+'</option>').join("")+'</select>'+lock+'</div>'+
+      '<div class="field"><label>Телефон</label><input id="f_phone" value="'+esc(r.phone)+'"></div>'+
+      '<button class="btn primary" id="saveBtn" onclick="doSave('+r.id+', '+taken+')">Сохранить</button>';
+  };
+
+  window.doSave = async function(id, taken){
+    const btn = document.getElementById("saveBtn");
+    btn.textContent = "Сохраняем…"; btn.disabled = true;
+    const fields = taken
+      ? { address: val("f_address"), phone: val("f_phone") }
+      : { problem: val("f_problem"), district: val("f_district"), address: val("f_address"), urgency: val("f_urgency"), phone: val("f_phone") };
+    try {
+      const d = await api("/edit", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ initData, id, fields }) });
+      const i = cache.findIndex(x=>x.id===id);
+      if(i>=0 && d.request) cache[i] = d.request;
+      if(tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred("success");
+      openDetails(id);
+    } catch(e){ btn.textContent = "Ошибка, попробуйте снова"; btn.disabled = false; }
+  };
+
+  window.doDelete = async function(id){
+    const ok = (tg && tg.showConfirm)
+      ? await new Promise(res => tg.showConfirm("Удалить заявку №"+id+"?", res))
+      : confirm("Удалить заявку №"+id+"?");
+    if(!ok) return;
+    try {
+      await api("/delete", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ initData, id }) });
+      cache = cache.filter(x=>x.id!==id);
+      if(tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred("success");
+      renderList();
+    } catch(e){ alert("Не удалось удалить. Попробуйте позже."); }
+  };
+
+  function val(id){ return document.getElementById(id).value.trim(); }
+  loadList();
 </script>
 </body>
 </html>
