@@ -58,6 +58,10 @@
   .btn:active { opacity: .8; }
   .state { text-align: center; padding: 50px 20px; color: var(--ink-dim); }
   .state .ico { font-size: 44px; margin-bottom: 12px; }
+  .btn-clear { display: block; width: 100%; margin: 18px 0 0; padding: 12px;
+    background: none; border: none; color: var(--ink-dim); font-size: 13px;
+    font-family: inherit; cursor: pointer; opacity: .6; text-decoration: underline; }
+  .btn-clear:active { opacity: 1; }
   @keyframes drop { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 </style>
 </head>
@@ -129,7 +133,10 @@
         <button class="btn release" onclick="act('+r.id+',\'release\')">🔄 Передать</button></div></div>').join("");
       h+='<div class="sub">История ('+d.history.length+')</div>';
       if(!d.history.length){ h+='<div class="state" style="padding:24px"><div class="ico">📚</div>История пуста.</div>'; }
-      else h+=d.history.map(r=>'<div class="card '+r.status+'">'+cardHead(r)+'<div class="meta">'+baseRows(r)+'</div></div>').join("");
+      else {
+        h+=d.history.map(r=>'<div class="card '+r.status+'">'+cardHead(r)+'<div class="meta">'+baseRows(r)+'</div></div>').join("");
+        h+='<button class="btn-clear" onclick="clearHistory()">Очистить историю</button>';
+      }
       content.innerHTML=h;
     } catch(e){ st("⚠️", e.message==="401" ? "Доступ только для мастеров." : "Нет связи с сервером."); }
   }
@@ -144,6 +151,20 @@
       if(tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred("success");
       if(current==="board") loadBoard(); else loadMine();
     } catch(e){ if(tg) tg.showAlert("Не удалось выполнить действие. Обновите и попробуйте снова."); }
+  };
+
+  window.clearHistory = async function(){
+    if(!(tg && tg.showConfirm)){
+      if(!confirm("Очистить всю историю? Это действие необратимо.")) return;
+    } else {
+      const ok = await new Promise(res=>tg.showConfirm("Очистить всю историю? Завершённые и отменённые заявки скроются из вашего списка.",res));
+      if(!ok) return;
+    }
+    try {
+      await api("/m/clear_history",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({initData})});
+      if(tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred("success");
+      loadMine();
+    } catch(e){ if(tg) tg.showAlert("Не удалось очистить историю."); }
   };
 
   if(!initData) st("🔒","Откройте через кнопку в боте мастера.");
