@@ -58,10 +58,11 @@
   .btn:active { opacity: .8; }
   .state { text-align: center; padding: 50px 20px; color: var(--ink-dim); }
   .state .ico { font-size: 44px; margin-bottom: 12px; }
-  .btn-clear { display: block; width: 100%; margin: 18px 0 0; padding: 12px;
-    background: none; border: none; color: var(--ink-dim); font-size: 13px;
-    font-family: inherit; cursor: pointer; opacity: .6; text-decoration: underline; }
-  .btn-clear:active { opacity: 1; }
+  .btn-clear { display: block; width: 100%; margin: 22px 0 0; padding: 13px;
+    background: none; border: 1.5px solid var(--edge); border-radius: 12px;
+    color: var(--ink-dim); font-size: 14px; font-weight: 600;
+    font-family: inherit; cursor: pointer; }
+  .btn-clear:active { opacity: .7; }
   @keyframes drop { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 </style>
 </head>
@@ -147,7 +148,7 @@
       if(!d.history.length){ h+='<div class="state" style="padding:24px"><div class="ico">📚</div>История пуста.</div>'; }
       else {
         h+=d.history.map(r=>'<div class="card '+r.status+'">'+cardHead(r)+'<div class="meta">'+baseRows(r)+'</div></div>').join("");
-        h+='<button class="btn-clear" onclick="clearHistory()">Очистить историю</button>';
+        h+='<button class="btn-clear" onclick="clearHistory()">🗑 Очистить историю</button>';
       }
       content.innerHTML=h;
     } catch(e){ st("⚠️", e.message==="401" ? "Доступ только для мастеров." : "Нет связи с сервером."); }
@@ -167,9 +168,9 @@
 
   window.clearHistory = async function(){
     if(!(tg && tg.showConfirm)){
-      if(!confirm("Очистить всю историю? Это действие необратимо.")) return;
+      if(!confirm("Вы уверены? История будет очищена.")) return;
     } else {
-      const ok = await new Promise(res=>tg.showConfirm("Очистить всю историю? Завершённые и отменённые заявки скроются из вашего списка.",res));
+      const ok = await new Promise(res=>tg.showConfirm("Вы уверены? Вся история скроется из вашего списка, а связанные уведомления удалятся из чата.",res));
       if(!ok) return;
     }
     try {
