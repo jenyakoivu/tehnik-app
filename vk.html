@@ -168,6 +168,11 @@
       drawClientList(inner);
     } catch(e){ root.innerHTML = clientHeader("Мои заявки") + '<div class="state"><div class="ico">⚠️</div>Нет связи с сервером.</div>'; }
   }
+  function clientBadge(r){
+    if(r.status==="taken") return '<span class="badge taken">Нашли мастера</span>';
+    if(r.released_once) return '<span class="badge new">Снова ищем</span>';
+    return '<span class="badge new">Ищем мастера</span>';
+  }
   function drawClientList(inner){
     const root = inner ? mount() : app;
     if(!clientCache.length){
@@ -180,7 +185,7 @@
       '<button class="btn primary" style="margin:0 0 14px" onclick="cOpenCreate('+(inner?1:0)+')">➕ Новая заявка</button>' +
       '<div class="count">Активных заявок: '+clientCache.length+'</div>' +
       clientCache.map(r=>'<div class="card tappable '+r.status+'" onclick="cDetails('+r.id+','+(inner?1:0)+')">'+
-        '<div class="top"><span class="num">Заявка №'+r.id+'</span></div>'+
+        '<div class="top"><span class="num">Заявка №'+r.id+'</span>'+clientBadge(r)+'</div>'+
         '<div class="problem">'+esc(r.problem)+'</div>'+
         '<div class="meta"><div class="row"><span class="i">📍</span><span>— '+esc(r.district)+', '+esc(r.address)+'</span></div>'+
         '<div class="row"><span class="i">⏱</span><span>— '+esc(r.urgency)+'</span></div></div>'+
@@ -280,7 +285,10 @@
   function mContact(r){
     let h='';
     if(r.phone) h+='<div class="row"><span class="i">📞</span>— <a href="tel:'+esc(r.phone_dial||r.phone)+'">'+esc(r.phone)+'</a></div>';
-    if(r.full_name) h+='<div class="row"><span class="i">👤</span>— '+esc(r.full_name)+'</div>';
+    var link = r.client_link || "";
+    var label = r.client_label || r.full_name || "";
+    if(link) h+='<div class="row"><span class="i">👤</span>— <a href="'+esc(link)+'" target="_blank">'+esc(label)+'</a></div>';
+    else if(label) h+='<div class="row"><span class="i">👤</span>— '+esc(label)+'</div>';
     return h;
   }
   function mHead(r){ return '<div class="top"><span class="num">Заявка №'+r.id+'</span>'+
