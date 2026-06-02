@@ -1,1 +1,329 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Мастер Рядом</title>
+<script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
+<style>
+  /* Палитра ВКонтакте */
+  :root {
+    --bg: #ffffff;
+    --bg-soft: #f0f2f5;
+    --card: #ffffff;
+    --ink: #000000;
+    --ink-dim: #818c99;
+    --accent: #2787f5;        /* фирменный синий ВК */
+    --accent-ink: #ffffff;
+    --green: #4bb34b;
+    --orange: #ffa000;
+    --red: #e64646;
+    --blue: #2787f5;
+    --edge: #e7e8ec;
+    --radius: 14px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #19191a; --bg-soft: #232324; --card: #232324;
+      --ink: #e1e3e6; --ink-dim: #76787a; --edge: #2f3033;
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+    background: var(--bg); color: var(--ink); min-height: 100vh; padding: 16px 14px 40px; -webkit-font-smoothing: antialiased; }
+  .head { display: flex; align-items: center; gap: 11px; margin-bottom: 16px; }
+  .head .logo { width: 42px; height: 42px; border-radius: 12px; background: linear-gradient(135deg, #2787f5, #1c68c9);
+    display: grid; place-items: center; font-size: 21px; flex-shrink: 0; }
+  .head h1 { font-size: 18px; font-weight: 700; }
+  .head p { font-size: 12px; color: var(--ink-dim); margin-top: 1px; }
+  .roleswitch { display: flex; gap: 6px; margin-bottom: 16px; background: var(--bg-soft); padding: 5px; border-radius: 12px; }
+  .roleswitch button { flex: 1; padding: 9px; border: none; border-radius: 9px; font-size: 14px; font-weight: 600;
+    color: var(--ink-dim); background: none; cursor: pointer; font-family: inherit; }
+  .roleswitch button.active { background: var(--accent); color: #fff; }
+  .tabs { display: flex; gap: 6px; margin-bottom: 16px; background: var(--bg-soft); padding: 5px; border-radius: 12px; }
+  .tab { flex: 1; text-align: center; padding: 9px; border-radius: 9px; font-size: 14px; font-weight: 600;
+    color: var(--ink-dim); cursor: pointer; border: none; background: none; font-family: inherit; }
+  .tab.active { background: var(--accent); color: #fff; }
+  .sub { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--ink-dim); margin: 18px 4px 10px; }
+  .count { font-size: 13px; color: var(--ink-dim); margin: 0 4px 12px; }
+  .card { background: var(--card); border: 1px solid var(--edge); border-radius: var(--radius);
+    padding: 14px 15px 13px; margin-bottom: 11px; position: relative; overflow: hidden; }
+  .card.tappable { cursor: pointer; padding-right: 40px; }
+  .card::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; }
+  .card.new::before { background: var(--green); }
+  .card.taken::before { background: var(--orange); }
+  .card.done::before { background: var(--blue); }
+  .card.canceled::before { background: var(--red); }
+  .top { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .num { font-size: 14px; font-weight: 700; }
+  .badge { font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 20px; white-space: nowrap; }
+  .badge.new { background: rgba(75,179,75,.15); color: var(--green); }
+  .badge.taken { background: rgba(255,160,0,.18); color: #c97a00; }
+  .badge.done { background: rgba(39,135,245,.14); color: var(--blue); }
+  .badge.canceled { background: rgba(230,70,70,.14); color: var(--red); }
+  .problem { font-size: 15px; font-weight: 600; margin-bottom: 8px; line-height: 1.3; }
+  .meta { display: flex; flex-direction: column; gap: 4px; }
+  .meta .row { display: flex; gap: 7px; font-size: 13px; color: var(--ink-dim); align-items: flex-start; }
+  .meta .row .i { width: 18px; text-align: center; flex-shrink: 0; }
+  .meta .row a { color: var(--accent); text-decoration: none; }
+  .chev { position: absolute; right: 13px; top: 50%; transform: translateY(-50%); color: var(--ink-dim); font-size: 26px; opacity: .6; }
+  .actions { display: flex; gap: 8px; margin-top: 12px; }
+  .field { margin-bottom: 15px; }
+  .field label { display: block; font-size: 12px; color: var(--ink-dim); margin-bottom: 6px; }
+  .field .val { font-size: 16px; font-weight: 500; }
+  .field input, .field select, .field textarea { width: 100%; background: var(--bg-soft); border: 1px solid var(--edge);
+    border-radius: 10px; padding: 12px 14px; color: var(--ink); font-size: 16px; font-family: inherit; outline: none; }
+  .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--accent); }
+  .field input:disabled, .field select:disabled, .field textarea:disabled { opacity: .5; }
+  .field textarea { resize: vertical; min-height: 70px; }
+  .btn { width: 100%; border: none; border-radius: 11px; padding: 14px; font-size: 15px; font-weight: 600;
+    cursor: pointer; font-family: inherit; margin-top: 8px; }
+  .btn.primary { background: var(--accent); color: #fff; }
+  .btn.ghost { background: transparent; color: var(--accent); border: 1.5px solid var(--accent); }
+  .btn.danger { background: transparent; color: var(--red); border: 1.5px solid rgba(230,70,70,.5); }
+  .btn.take { background: var(--accent); color: #fff; flex: 1; margin: 0; }
+  .btn.done { background: var(--green); color: #fff; flex: 1; margin: 0; }
+  .btn.release { background: transparent; color: var(--ink-dim); border: 1.5px solid var(--edge); flex: 1; margin: 0; }
+  .btn:active { opacity: .85; }
+  .back { background: none; border: none; color: var(--accent); font-size: 16px; cursor: pointer; padding: 6px 0; margin-bottom: 8px; font-weight: 500; }
+  .state { text-align: center; padding: 50px 20px; color: var(--ink-dim); }
+  .state .ico { font-size: 44px; margin-bottom: 12px; }
+  .btn-clear { display: block; width: 100%; margin: 22px 0 0; padding: 13px; background: none; border: 1.5px solid var(--edge);
+    border-radius: 11px; color: var(--ink-dim); font-size: 14px; font-weight: 600; font-family: inherit; cursor: pointer; }
+  .locked { font-size: 11px; color: var(--ink-dim); margin-top: 5px; }
+  .hint { font-size: 13px; color: var(--ink-dim); margin: -2px 4px 14px; line-height: 1.4; }
+</style>
+</head>
+<body>
+  <div id="app"><div class="state"><div class="ico">⏳</div>Загрузка…</div></div>
+<script>
+  const API = "https://138.124.54.85.nip.io/api/vk";
+  // Параметры запуска ВК — это строка после ? в адресе. Их и проверяет сервер.
+  const SIGN = window.location.search.slice(1);
+  const app = document.getElementById("app");
 
+  const DISTRICTS = ["Индустриальный","Северный","Заягорбский","Зашекснинский","Пригород"];
+  const URGENCIES = ["Срочно — авария","Сегодня","В ближайшие дни"];
+
+  let role = "client";       // client | master | admin
+  let viewAs = "client";     // для админа: что смотрим
+  let clientCache = [];
+
+  function esc(s){ return (s||"").replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+  function st(ico,t){ app.innerHTML = '<div class="state"><div class="ico">'+ico+'</div>'+t+'</div>'; }
+  async function api(path, opts){ const r = await fetch(API+path, opts); if(!r.ok) throw new Error(r.status); return r.json(); }
+  function withSign(path){ return path + (path.includes("?")?"&":"?") + "sign_params=" + encodeURIComponent(SIGN); }
+
+  // Инициализация VK Bridge (нужно для мобильных)
+  if (window.vkBridge) { try { vkBridge.send("VKWebAppInit", {}); } catch(e){} }
+
+  // Тап по пустому месту убирает клавиатуру
+  document.addEventListener("pointerdown", function(e){
+    const t = e.target;
+    const isField = t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT";
+    const isBtn = t.tagName === "BUTTON" || (t.closest && t.closest("button"));
+    if(!isField && !isBtn && document.activeElement &&
+       (document.activeElement.tagName === "INPUT" || document.activeElement.tagName === "TEXTAREA")){
+      document.activeElement.blur();
+    }
+  });
+
+  async function boot(){
+    if(!SIGN){ st("🔒","Откройте приложение внутри ВКонтакте."); return; }
+    try {
+      const me = await api(withSign("/me"));
+      role = me.role;
+      if(role === "admin"){ viewAs = "client"; renderAdmin(); }
+      else if(role === "master"){ renderMaster(); }
+      else { renderClient(); }
+    } catch(e){ st("⚠️","Не удалось подключиться. Попробуйте позже."); }
+  }
+
+  // ---------- Переключатель для админа ----------
+  function renderAdmin(){
+    const sw = '<div class="roleswitch">'+
+      '<button class="'+(viewAs==="client"?"active":"")+'" onclick="setView(\'client\')">Клиент</button>'+
+      '<button class="'+(viewAs==="master"?"active":"")+'" onclick="setView(\'master\')">Мастер</button></div>';
+    app.innerHTML = sw + '<div id="inner"></div>';
+    if(viewAs==="client") renderClient(true); else renderMaster(true);
+  }
+  window.setView = function(v){ viewAs = v; renderAdmin(); };
+  function mount(){ return document.getElementById("inner") || app; }
+
+  // ================= КЛИЕНТ =================
+  function clientHeader(sub){ return '<div class="head"><div class="logo">👷</div><div><h1>Мастер Рядом</h1><p>'+sub+'</p></div></div>'; }
+  function statusLabel(r){
+    if(r.status==="taken") return "✅ Нашли для вас мастера";
+    if(r.status==="done") return "🏁 Заявка выполнена";
+    if(r.status==="canceled") return "❌ Отменена";
+    if(r.released_once) return "🔄🔍 Снова ищем мастера";
+    return "🔍 Ищем мастера";
+  }
+  async function renderClient(inner){
+    const root = inner ? mount() : app;
+    root.innerHTML = clientHeader("Мои заявки") + '<div class="state"><div class="ico">⏳</div>Загрузка…</div>';
+    try {
+      const d = await api(withSign("/my_requests"));
+      clientCache = d.requests || [];
+      drawClientList(inner);
+    } catch(e){ root.innerHTML = clientHeader("Мои заявки") + '<div class="state"><div class="ico">⚠️</div>Нет связи с сервером.</div>'; }
+  }
+  function drawClientList(inner){
+    const root = inner ? mount() : app;
+    if(!clientCache.length){
+      root.innerHTML = clientHeader("Мои заявки") +
+        '<div class="state"><div class="ico">📭</div>У вас пока нет заявок.</div>' +
+        '<button class="btn primary" onclick="cOpenCreate('+(inner?1:0)+')">➕ Оставить заявку</button>';
+      return;
+    }
+    root.innerHTML = clientHeader("Мои заявки") +
+      '<button class="btn primary" style="margin:0 0 14px" onclick="cOpenCreate('+(inner?1:0)+')">➕ Новая заявка</button>' +
+      '<div class="count">Активных заявок: '+clientCache.length+'</div>' +
+      clientCache.map(r=>'<div class="card tappable '+r.status+'" onclick="cDetails('+r.id+','+(inner?1:0)+')">'+
+        '<div class="top"><span class="num">Заявка №'+r.id+'</span></div>'+
+        '<div class="problem">'+esc(r.problem)+'</div>'+
+        '<div class="meta"><div class="row"><span class="i">📍</span><span>— '+esc(r.district)+', '+esc(r.address)+'</span></div>'+
+        '<div class="row"><span class="i">⏱</span><span>— '+esc(r.urgency)+'</span></div></div>'+
+        '<span class="chev">›</span></div>').join("");
+  }
+  window.cDetails = function(id, inner){
+    const root = inner ? mount() : app;
+    const r = clientCache.find(x=>x.id===id); if(!r) return;
+    root.innerHTML = clientHeader("Заявка №"+r.id) +
+      '<button class="back" onclick="drawClientList('+(inner?1:0)+')">‹ Назад</button>'+
+      '<div class="field"><label>Статус</label><div class="val">'+statusLabel(r)+'</div></div>'+
+      '<div class="field"><label>Проблема</label><div class="val">'+esc(r.problem)+'</div></div>'+
+      '<div class="field"><label>Район</label><div class="val">'+esc(r.district)+'</div></div>'+
+      '<div class="field"><label>Адрес</label><div class="val">'+esc(r.address)+'</div></div>'+
+      '<div class="field"><label>Срочность</label><div class="val">'+esc(r.urgency)+'</div></div>'+
+      '<div class="field"><label>Телефон</label><div class="val">'+esc(r.phone_show||r.phone)+'</div></div>'+
+      '<button class="btn ghost" onclick="cEdit('+r.id+','+(inner?1:0)+')">✏️ Редактировать</button>'+
+      '<button class="btn danger" onclick="cDelete('+r.id+','+(inner?1:0)+')">🗑 Удалить заявку</button>';
+  };
+  window.cOpenCreate = function(inner){
+    const root = inner ? mount() : app;
+    root.innerHTML = clientHeader("Новая заявка") +
+      '<button class="back" onclick="drawClientList('+(inner?1:0)+')">‹ Назад</button>'+
+      '<div class="field"><label>Что случилось?</label><textarea id="c_problem" placeholder="Например: течёт труба под раковиной"></textarea></div>'+
+      '<div class="field"><label>Район</label><select id="c_district">'+DISTRICTS.map(d=>'<option>'+d+'</option>').join("")+'</select></div>'+
+      '<div class="field"><label>Адрес</label><input id="c_address" placeholder="улица, дом, квартира"></div>'+
+      '<div class="field"><label>Срочность</label><select id="c_urgency">'+URGENCIES.map(u=>'<option>'+u+'</option>').join("")+'</select></div>'+
+      '<div class="field"><label>Телефон</label><input id="c_phone" placeholder="+7 999 123-45-67" inputmode="tel"></div>'+
+      '<button class="btn primary" id="cCreateBtn" onclick="cCreate('+(inner?1:0)+')">Отправить заявку</button>';
+  };
+  function v(id){ return document.getElementById(id).value.trim(); }
+  window.cCreate = async function(inner){
+    const problem=v("c_problem"), district=v("c_district"), address=v("c_address"), urgency=v("c_urgency"), phone=v("c_phone");
+    const digits = phone.replace(/\D/g,"");
+    if(problem.length<3){ alert("Опишите проблему подробнее."); return; }
+    if(address.length<3){ alert("Укажите адрес."); return; }
+    if(digits.length<10){ alert("Введите корректный телефон."); return; }
+    const btn=document.getElementById("cCreateBtn"); btn.textContent="Отправляем…"; btn.disabled=true;
+    try {
+      await api("/create",{method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({sign_params:SIGN, problem, district, address, urgency, phone})});
+      await renderClient(inner);
+    } catch(e){ btn.textContent="Ошибка, попробуйте снова"; btn.disabled=false; }
+  };
+  window.cEdit = function(id, inner){
+    const root = inner ? mount() : app;
+    const r = clientCache.find(x=>x.id===id); if(!r) return;
+    const taken = r.status==="taken"; const dis = taken?"disabled":"";
+    root.innerHTML = clientHeader("Редактирование") +
+      '<button class="back" onclick="cDetails('+r.id+','+(inner?1:0)+')">‹ Назад</button>'+
+      (taken?'<div class="hint">Мастер уже взял заявку. Сейчас можно изменить только адрес и телефон.</div>':"")+
+      '<div class="field"><label>Проблема</label><textarea id="e_problem" '+dis+'>'+esc(r.problem)+'</textarea></div>'+
+      '<div class="field"><label>Район</label><select id="e_district" '+dis+'>'+DISTRICTS.map(d=>'<option '+(d===r.district?"selected":"")+'>'+d+'</option>').join("")+'</select></div>'+
+      '<div class="field"><label>Адрес</label><input id="e_address" value="'+esc(r.address)+'"></div>'+
+      '<div class="field"><label>Срочность</label><select id="e_urgency" '+dis+'>'+URGENCIES.map(u=>'<option '+(u===r.urgency?"selected":"")+'>'+u+'</option>').join("")+'</select></div>'+
+      '<div class="field"><label>Телефон</label><input id="e_phone" value="'+esc(r.phone)+'"></div>'+
+      '<button class="btn primary" id="eSaveBtn" onclick="cSave('+r.id+','+taken+','+(inner?1:0)+')">Сохранить</button>';
+  };
+  window.cSave = async function(id, taken, inner){
+    const btn=document.getElementById("eSaveBtn"); btn.textContent="Сохраняем…"; btn.disabled=true;
+    const fields = taken ? {address:v("e_address"), phone:v("e_phone")}
+      : {problem:v("e_problem"), district:v("e_district"), address:v("e_address"), urgency:v("e_urgency"), phone:v("e_phone")};
+    try {
+      const d = await api("/edit",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({sign_params:SIGN,id,fields})});
+      const i = clientCache.findIndex(x=>x.id===id); if(i>=0 && d.request) clientCache[i]=d.request;
+      cDetails(id, inner);
+    } catch(e){ btn.textContent="Ошибка, попробуйте снова"; btn.disabled=false; }
+  };
+  window.cDelete = async function(id, inner){
+    if(!confirm("Удалить заявку №"+id+"?")) return;
+    try {
+      await api("/delete",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({sign_params:SIGN,id})});
+      clientCache = clientCache.filter(x=>x.id!==id);
+      drawClientList(inner);
+    } catch(e){ alert("Не удалось удалить."); }
+  };
+
+  // ================= МАСТЕР =================
+  let mTab = "board";
+  function masterHeader(){ return '<div class="head"><div class="logo">🧰</div><div><h1>Кабинет мастера</h1><p>Мастер Рядом</p></div></div>'; }
+  const mStatusBadge = { new:"Открыта", taken:"В работе", done:"Выполнена", canceled:"Отменена клиентом" };
+
+  function renderMaster(inner){
+    const root = inner ? mount() : app;
+    root.innerHTML = masterHeader() +
+      '<div class="tabs"><button class="tab '+(mTab==="board"?"active":"")+'" onclick="mSwitch(\'board\','+(inner?1:0)+')">📋 Доска заявок</button>'+
+      '<button class="tab '+(mTab==="mine"?"active":"")+'" onclick="mSwitch(\'mine\','+(inner?1:0)+')">🗃️ Мои заявки</button></div>'+
+      '<div id="mContent"><div class="state"><div class="ico">⏳</div>Загрузка…</div></div>';
+    if(mTab==="board") mLoadBoard(); else mLoadMine();
+  }
+  window.mSwitch = function(t, inner){ mTab=t; renderMaster(inner); };
+  function mc(){ return document.getElementById("mContent"); }
+  function mBaseRows(r){
+    return '<div class="row"><span class="i">📍</span><span>— '+esc(r.district)+', '+esc(r.address)+'</span></div>'+
+           '<div class="row"><span class="i">⏱</span><span>— '+esc(r.urgency)+'</span></div>';
+  }
+  function mContact(r){
+    let h='';
+    if(r.phone) h+='<div class="row"><span class="i">📞</span>— <a href="tel:'+esc(r.phone_dial||r.phone)+'">'+esc(r.phone)+'</a></div>';
+    if(r.full_name) h+='<div class="row"><span class="i">👤</span>— '+esc(r.full_name)+'</div>';
+    return h;
+  }
+  function mHead(r){ return '<div class="top"><span class="num">Заявка №'+r.id+'</span>'+
+    '<span class="badge '+r.status+'">'+(mStatusBadge[r.status]||r.status)+'</span></div><div class="problem">'+esc(r.problem)+'</div>'; }
+  async function mLoadBoard(){
+    try {
+      const d = await api(withSign("/m/board"));
+      if(!d.requests.length){ mc().innerHTML='<div class="state"><div class="ico">📭</div>Свободных заявок нет.</div>'; return; }
+      mc().innerHTML = d.requests.map(r=>'<div class="card '+r.status+'">'+mHead(r)+'<div class="meta">'+mBaseRows(r)+'</div>'+
+        '<div class="actions"><button class="btn take" onclick="mAct('+r.id+',\'take\')">✋ Взять в работу</button></div></div>').join("");
+    } catch(e){ mc().innerHTML='<div class="state"><div class="ico">⚠️</div>Нет связи.</div>'; }
+  }
+  async function mLoadMine(){
+    try {
+      const d = await api(withSign("/m/mine"));
+      let h='<div class="sub">В работе ('+d.active.length+')</div>';
+      if(!d.active.length) h+='<div class="state" style="padding:24px"><div class="ico">🔧</div>Нет заявок в работе.</div>';
+      else h+=d.active.map(r=>'<div class="card '+r.status+'">'+mHead(r)+'<div class="meta">'+mBaseRows(r)+mContact(r)+'</div>'+
+        '<div class="actions"><button class="btn done" onclick="mAct('+r.id+',\'complete\')">✅ Выполнено</button>'+
+        '<button class="btn release" onclick="mAct('+r.id+',\'release\')">🔄 Передать</button></div></div>').join("");
+      h+='<div class="sub">История ('+d.history.length+')</div>';
+      if(!d.history.length) h+='<div class="state" style="padding:24px"><div class="ico">📁</div>История пуста.</div>';
+      else { h+=d.history.map(r=>'<div class="card '+r.status+'">'+mHead(r)+'<div class="meta">'+mBaseRows(r)+'</div></div>').join("");
+        h+='<button class="btn-clear" onclick="mClear()">🗑 Очистить историю</button>'; }
+      mc().innerHTML=h;
+    } catch(e){ mc().innerHTML='<div class="state"><div class="ico">⚠️</div>Нет связи.</div>'; }
+  }
+  window.mAct = async function(id, action){
+    if(action==="release" && !confirm("Передать заявку №"+id+" другим мастерам?")) return;
+    try {
+      await api("/m/action",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({sign_params:SIGN,id,action})});
+      if(mTab==="board") mLoadBoard(); else mLoadMine();
+    } catch(e){ alert("Не удалось выполнить действие."); }
+  };
+  window.mClear = async function(){
+    if(!confirm("Вы уверены? История будет очищена.")) return;
+    try {
+      await api("/m/clear_history",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({sign_params:SIGN})});
+      mLoadMine();
+    } catch(e){ alert("Не удалось очистить."); }
+  };
+
+  boot();
+</script>
+</body>
+</html>
