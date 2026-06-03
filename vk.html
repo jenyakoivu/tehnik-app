@@ -108,6 +108,17 @@
   let role = "client";       // client | master | admin
   let viewAs = "client";     // для админа: что смотрим
   let clientCache = [];
+  let vkUser = { photo: "", name: "" };  // фото и имя текущего пользователя ВК
+
+  // Получаем имя и фото пользователя ВК (для показа мастеру)
+  async function fetchVkUser(){
+    if(!window.vkBridge) return;
+    try {
+      const info = await vkBridge.send("VKWebAppGetUserInfo", {});
+      vkUser.name = ((info.first_name||"") + " " + (info.last_name||"")).trim();
+      vkUser.photo = info.photo_200 || info.photo_100 || info.photo_max || "";
+    } catch(e){}
+  }
 
   function esc(s){ return (s||"").replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
   function st(ico,t){ app.innerHTML = '<div class="state"><div class="ico">'+ico+'</div>'+t+'</div>'; }
@@ -144,6 +155,7 @@
   async function boot(){
     if(!SIGN){ st("🔒","Откройте приложение внутри ВКонтакте."); return; }
     askMessagesPermission();  // сразу просим разрешение на уведомления
+    fetchVkUser();            // получаем фото и имя для показа мастеру
     try {
       const me = await api(withSign("/me"));
       role = me.role;
@@ -227,9 +239,26 @@
       '<div class="field"><label>Район</label><select id="c_district">'+DISTRICTS.map(d=>'<option>'+d+'</option>').join("")+'</select></div>'+
       '<div class="field"><label>Адрес</label><input id="c_address" placeholder="улица, дом, квартира"></div>'+
       '<div class="field"><label>Срочность</label><select id="c_urgency">'+URGENCIES.map(u=>'<option>'+u+'</option>').join("")+'</select></div>'+
-      '<div class="field"><label>Телефон</label><input id="c_phone" placeholder="+7 999 123-45-67" inputmode="tel"></div>'+
+      '<div class="field"><label>Телефон</label><input id="c_phone" placeholder="+7 999 123-45-67" inputmode="tel" oninput="maskPhone(this)"></div>'+
       '<button class="btn primary" id="cCreateBtn" onclick="cCreate('+(inner?1:0)+')">Отправить заявку</button>';
   };
+
+  // Маска телефона: по мере ввода форматирует в +7 999 123-45-67
+  function maskPhone(el){
+    var d = el.value.replace(/\D/g, "");
+    if(d.startsWith("8")) d = "7" + d.slice(1);
+    if(!d.startsWith("7")) d = "7" + d;
+    d = d.slice(0, 11);  // 7 + 10 цифр
+    var rest = d.slice(1);
+    var out = "+7";
+    if(rest.length > 0) out += " " + rest.slice(0,3);
+    if(rest.length >= 4) out += " " + rest.slice(3,6);
+    if(rest.length >= 7) out += "-" + rest.slice(6,8);
+    if(rest.length >= 9) out += "-" + rest.slice(8,10);
+    el.value = out;
+  }
+  window.maskPhone = maskPhone;
+
   function v(id){ return document.getElementById(id).value.trim(); }
   window.cCreate = async function(inner){
     const problem=v("c_problem"), district=v("c_district"), address=v("c_address"), urgency=v("c_urgency"), phone=v("c_phone");
@@ -240,7 +269,7 @@
     const btn=document.getElementById("cCreateBtn"); btn.textContent="Отправляем…"; btn.disabled=true;
     try {
       await api("/create",{method:"POST",headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({sign_params:SIGN, problem, district, address, urgency, phone})});
+        body:JSON.stringify({sign_params:SIGN, problem, district, address, urgency, phone, photo:vkUser.photo, name:vkUser.name})});
       await renderClient(inner);
     } catch(e){ btn.textContent="Ошибка, попробуйте снова"; btn.disabled=false; }
   };
@@ -255,7 +284,7 @@
       '<div class="field"><label>Район</label><select id="e_district" '+dis+'>'+DISTRICTS.map(d=>'<option '+(d===r.district?"selected":"")+'>'+d+'</option>').join("")+'</select></div>'+
       '<div class="field"><label>Адрес</label><input id="e_address" value="'+esc(r.address)+'"></div>'+
       '<div class="field"><label>Срочность</label><select id="e_urgency" '+dis+'>'+URGENCIES.map(u=>'<option '+(u===r.urgency?"selected":"")+'>'+u+'</option>').join("")+'</select></div>'+
-      '<div class="field"><label>Телефон</label><input id="e_phone" value="'+esc(r.phone)+'"></div>'+
+      '<div class="field"><label>Телефон</label><input id="e_phone" value="'+esc(r.phone_show||r.phone)+'" oninput="maskPhone(this)"></div>'+
       '<button class="btn primary" id="eSaveBtn" onclick="cSave('+r.id+','+taken+','+(inner?1:0)+')">Сохранить</button>';
   };
   window.cSave = async function(id, taken, inner){
@@ -298,12 +327,21 @@
   }
   function mContact(r){
     let h='';
-    if(r.phone) h+='<div class="row"><span class="i">📞</span>— <a href="tel:'+esc(r.phone_dial||r.phone)+'">'+esc(r.phone)+'</a></div>';
+    if(r.client_photo) h+='<div class="row" style="align-items:center"><img src="'+esc(r.client_photo)+'" style="width:36px;height:36px;border-radius:50%;object-fit:cover;margin-right:4px"><b>'+esc(r.client_name||"Клиент")+'</b></div>';
+    else if(r.client_name) h+='<div class="row"><span class="i">👤</span>— '+esc(r.client_name)+'</div>';
+    if(r.phone) h+='<div class="row"><span class="i">📞</span>— <a href="#" onclick="callPhone(\''+esc(r.phone_dial||r.phone)+'\');return false;">'+esc(r.phone)+'</a></div>';
     var link = r.client_link || "";
-    var label = r.client_label || r.full_name || "";
-    if(link) h+='<div class="row"><span class="i">👤</span>— <a href="'+esc(link)+'" target="_blank">'+esc(label)+'</a></div>';
-    else if(label) h+='<div class="row"><span class="i">👤</span>— '+esc(label)+'</div>';
+    var label = r.client_label || "";
+    if(link) h+='<div class="row"><span class="i">🔗</span>— <a href="'+esc(link)+'" target="_blank">'+esc(label)+'</a></div>';
     return h;
+  }
+  function callPhone(num){
+    var copied = false;
+    try { if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(num); copied = true; } } catch(e){}
+    if(!copied){ try { var ta=document.createElement("textarea"); ta.value=num; document.body.appendChild(ta); ta.select(); document.execCommand("copy"); document.body.removeChild(ta); copied=true; } catch(e){} }
+    try { window.location.href = "tel:" + num; } catch(e){}
+    if(window.vkBridge){ try { vkBridge.send("VKWebAppShowSnackbar",{text:"Номер скопирован: "+num}); return; } catch(e){} }
+    alert("Номер скопирован: " + num);
   }
   function mHead(r){ return '<div class="top"><span class="num">Заявка №'+r.id+'</span>'+
     '<span class="badge '+r.status+'">'+(mStatusBadge[r.status]||r.status)+'</span></div><div class="problem">'+esc(r.problem)+'</div>'; }
