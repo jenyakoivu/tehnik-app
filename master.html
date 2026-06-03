@@ -36,6 +36,7 @@
   .card::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 5px; }
   .card.new::before { background: var(--green); }
   .card.taken::before { background: var(--orange); }
+  .card.urgent::before { background: #e64646; }
   .card.done::before { background: var(--blue); }
   .card.canceled::before { background: var(--red); }
   .top { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 8px; }
@@ -144,6 +145,11 @@
     return '<div class="row"><span class="i">📍</span><span>— '+esc(r.district)+', '+esc(r.address)+'</span></div>'+
            '<div class="row"><span class="i">⏱</span><span>— '+esc(r.urgency)+'</span></div>';
   }
+  function cardClass(r){
+    var c = r.status;
+    if((r.urgency||"").indexOf("Срочно") === 0) c += " urgent";
+    return c;
+  }
   function cardHead(r){
     return '<div class="top"><span class="num">Заявка №'+r.id+'</span>'+
            '<span class="badge '+r.status+'">'+(statusBadge[r.status]||r.status)+'</span></div>'+
@@ -156,7 +162,7 @@
       const d=await api("/m/board?initData="+encodeURIComponent(initData));
       if(!d.requests.length){ st("📭","Свободных заявок нет.<br>Новые появятся здесь автоматически."); return; }
       content.innerHTML = d.requests.map(r=>'\
-        <div class="card '+r.status+'">'+cardHead(r)+'<div class="meta">'+baseRows(r)+'</div>\
+        <div class="card '+cardClass(r)+'">'+cardHead(r)+'<div class="meta">'+baseRows(r)+'</div>\
         <div class="actions"><button class="btn take" onclick="act('+r.id+',\'take\')">✋ Взять в работу</button></div></div>').join("");
     } catch(e){ st("⚠️", e.message==="401" ? "Доступ только для мастеров." : "Нет связи с сервером."); }
   }
@@ -169,13 +175,13 @@
       h+='<div class="sub">В работе ('+d.active.length+')</div>';
       if(!d.active.length){ h+='<div class="state" style="padding:24px"><div class="ico">🔧</div>Нет заявок в работе.</div>'; }
       else h+=d.active.map(r=>'\
-        <div class="card '+r.status+'">'+cardHead(r)+'<div class="meta">'+baseRows(r)+contactRows(r)+'</div>\
+        <div class="card '+cardClass(r)+'">'+cardHead(r)+'<div class="meta">'+baseRows(r)+contactRows(r)+'</div>\
         <div class="actions"><button class="btn done" onclick="act('+r.id+',\'complete\')">✅ Выполнено</button>\
         <button class="btn release" onclick="act('+r.id+',\'release\')">🔄 Передать</button></div></div>').join("");
       h+='<div class="sub">История ('+d.history.length+')</div>';
       if(!d.history.length){ h+='<div class="state" style="padding:24px"><div class="ico">📁</div>История пуста.</div>'; }
       else {
-        h+=d.history.map(r=>'<div class="card '+r.status+'">'+cardHead(r)+'<div class="meta">'+baseRows(r)+'</div></div>').join("");
+        h+=d.history.map(r=>'<div class="card '+cardClass(r)+'">'+cardHead(r)+'<div class="meta">'+baseRows(r)+'</div></div>').join("");
         h+='<button class="btn-clear" onclick="clearHistory()">🗑 Очистить историю</button>';
       }
       content.innerHTML=h;
